@@ -1,0 +1,26 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+build/
+dist/
+
+# ---- 编辑器 ----
+.idea/
+.vscode/
+
+# ---- 备份 / 过程文件 ----
+*.bak
+*.bak_*
+*.lnk
+
+# ---- 开发用参考素材（截图、手机照片、备份拐角、logo 原图）----
+resource/build/
+resource/_corner_bak/
+resource/logo_source.jpg
+
+# ---- 系统 ----
+Thumbs.db
+desktop.ini
+.DS_Store

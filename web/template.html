@@ -1,0 +1,1808 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="huanghui">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<title>终末地 · 电池配比计算器</title>
+<link id="favicon" rel="icon" type="image/png" href="@@IMG:logo.png@@">
+<link id="touchIcon" rel="apple-touch-icon" href="@@IMG:logo.png@@">
+<link id="manifestLink" rel="manifest">
+<meta name="theme-color" content="#1E1E1E" id="metaTheme">
+<style>
+/* ===================== 主题配色（与桌面版一致） ===================== */
+:root{
+  --r-panel:22px; --r-field:15px; --r-btn:18px; --r-pop:16px;
+}
+html[data-theme="huanghui"]{
+  --bg:#1E1E1E; --panel:#2A2A2A; --panel-hi:#363636; --row-sel:#3C3300;
+  --input:#242424; --border:#4A4A4A; --track:#5A5A5A;
+  --accent:#FFD400; --accent-hi:#FFE45C; --accent-dim:#9A8000;
+  --on-accent:#141414; --hint-on-accent:#000000;
+  --text:#F2F2F2; --muted:#A8A8A8; --amber:#FFB020; --danger:#FF6B6B; --ph:#6E6E6E;
+}
+html[data-theme="bailan"]{
+  --bg:#EDF1F7; --panel:#FFFFFF; --panel-hi:#E4EBF5; --row-sel:#D9E8FB;
+  --input:#F7FAFD; --border:#CDD9E8; --track:#C0CEDF;
+  --accent:#1E6FD9; --accent-hi:#3D8BE8; --accent-dim:#9CBEE8;
+  --on-accent:#FFFFFF; --hint-on-accent:#EAF2FF;
+  --text:#1B2733; --muted:#6C7C8F; --amber:#B87300; --danger:#D24040; --ph:#9AA8B8;
+}
+html[data-theme="huangzi"]{
+  --bg:#191223; --panel:#241A33; --panel-hi:#322246; --row-sel:#3E3206;
+  --input:#1E1730; --border:#41335C; --track:#4E3E6E;
+  --accent:#FFD400; --accent-hi:#FFE45C; --accent-dim:#8A7200;
+  --on-accent:#191223; --hint-on-accent:#000000;
+  --text:#F1ECFA; --muted:#A79BC0; --amber:#FFB020; --danger:#FF6B6B; --ph:#6B5F85;
+}
+
+/* ===================== 基础 ===================== */
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text)}
+body{
+  min-height:100dvh;
+  font-family:"Microsoft YaHei UI","PingFang SC","Hiragino Sans GB","Noto Sans CJK SC",
+              system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  -webkit-text-size-adjust:100%;
+  -webkit-tap-highlight-color:transparent;
+}
+button,input{font-family:inherit}
+h1,h2,p{margin:0}
+
+.page{max-width:1280px;margin:0 auto;padding:18px 36px 22px}
+@media (max-width:900px){ .page{padding:14px 16px calc(20px + env(safe-area-inset-bottom))} }
+
+/* ===================== 顶部 ===================== */
+.head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.titles h1{font-size:clamp(19px,4.4vw,26px);font-weight:800;letter-spacing:.5px}
+.titles p{margin-top:5px;font-family:Consolas,ui-monospace,monospace;font-size:11px;
+          letter-spacing:2px;color:var(--accent-dim)}
+.rule{display:flex;align-items:center;gap:0;margin:13px 0 15px}
+.rule i{display:block;height:3px;width:130px;background:var(--accent);border-radius:2px}
+.rule b{display:block;height:3px;flex:1;background:var(--border);border-radius:2px}
+
+@media (max-width:560px){
+  .head{flex-direction:column;align-items:stretch;gap:12px}
+  .head .dropbtn{width:100%;justify-content:flex-start}
+}
+
+/* ===================== 下拉框 ===================== */
+.dropdown{position:relative;flex:none}
+.dropbtn{
+  display:flex;align-items:center;gap:9px;min-height:44px;
+  padding:8px 12px;border:1px solid var(--border);border-radius:var(--r-field);
+  background:var(--panel-hi);color:var(--text);cursor:pointer;font-size:13px;
+}
+.dropbtn:active{filter:brightness(1.08)}
+.swatch{display:flex;border-radius:4px;overflow:hidden;flex:none}
+.swatch i{display:block;width:11px;height:20px}
+.caret{color:var(--accent);font-size:11px}
+.droplist{
+  position:absolute;z-index:30;top:calc(100% + 6px);left:0;min-width:100%;
+  background:var(--panel);border:1px solid var(--accent-dim);border-radius:var(--r-pop);
+  box-shadow:0 12px 34px rgba(0,0,0,.45);overflow:hidden;display:none;
+}
+.droplist.right{left:auto;right:0}
+.dropdown.open .droplist{display:block}
+.dropdown.open .dropbtn{border-color:var(--accent)}
+.row{
+  display:flex;align-items:center;gap:12px;width:100%;min-height:56px;
+  padding:8px 14px;border:0;background:var(--panel);color:var(--text);
+  cursor:pointer;text-align:left;font-size:14px;
+}
+.row:hover,.row.hover{background:var(--panel-hi)}
+.row.sel{background:var(--row-sel);color:var(--accent)}
+.row img{width:38px;height:38px;border-radius:8px;flex:none}
+.row .col{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
+.row .sub{font-size:12px;color:var(--muted)}
+.row.sel .sub{color:var(--accent-dim)}
+.row .check{color:var(--accent);font-size:15px;width:14px;text-align:center}
+
+/* ===================== 主体 ===================== */
+main{display:grid;grid-template-columns:minmax(0,440px) minmax(0,1fr);gap:22px;align-items:stretch}
+@media (max-width:900px){ main{grid-template-columns:1fr;gap:16px} }
+
+.panel{background:var(--panel);border:1px solid var(--border);
+       border-radius:var(--r-panel);padding:22px}
+@media (max-width:900px){ .panel{padding:16px} }
+.panel-body{display:flex;flex-direction:column;height:100%;min-height:0}
+
+.sec{display:flex;align-items:center;gap:10px;margin:14px 0 0}
+.sec i{display:block;width:4px;height:15px;background:var(--accent);border-radius:2px}
+.sec h2{font-size:15px;font-weight:700}
+.sec:first-child{margin-top:0}
+
+.hint{font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.5}
+
+.field{
+  width:100%;margin-top:9px;padding:13px 15px;background:var(--input);color:var(--text);
+  border:1px solid var(--border);border-radius:var(--r-field);
+  font-size:17px;font-family:Consolas,ui-monospace,monospace;outline:none;
+  -moz-appearance:textfield;
+}
+.field::-webkit-outer-spin-button,.field::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.field:focus{border-color:var(--accent)}
+
+/* 电池选择 */
+.battsel .dropbtn{width:100%;padding:11px 12px;justify-content:flex-start}
+.battsel .dropbtn img{width:52px;height:52px;border-radius:9px;flex:none}
+.battsel .col{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0;text-align:left}
+.battsel .lbl{font-size:14px}
+.battsel .sub{font-size:12.5px;color:var(--accent)}
+.battsel .droplist{width:100%}
+
+/* 速率滑轨 */
+.slider-wrap{margin-top:14px}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;width:100%;height:34px;
+  background:transparent;cursor:pointer;
+}
+input[type=range]::-webkit-slider-runnable-track{
+  height:8px;border-radius:4px;
+  background:linear-gradient(to right,var(--accent) var(--fill,0%),var(--track) var(--fill,0%));
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:27px;height:27px;margin-top:-9.5px;border-radius:50%;
+  border:0;background:radial-gradient(circle,var(--bg) 0 4.5px,var(--accent) 5.5px 100%);
+  box-shadow:0 0 0 1px var(--bg);
+}
+input[type=range]:focus{outline:none}
+input[type=range]:focus::-webkit-slider-thumb{background:radial-gradient(circle,var(--bg) 0 4.5px,var(--accent-hi) 5.5px 100%)}
+input[type=range]::-moz-range-track{
+  height:8px;border-radius:4px;
+  background:linear-gradient(to right,var(--accent) var(--fill,0%),var(--track) var(--fill,0%));
+}
+input[type=range]::-moz-range-thumb{
+  width:27px;height:27px;border-radius:50%;border:0;
+  background:radial-gradient(circle,var(--bg) 0 4.5px,var(--accent) 5.5px 100%);
+}
+.ticks{display:flex;justify-content:space-between;margin-top:2px;padding:0 2px}
+.ticks span{font-family:Consolas,ui-monospace,monospace;font-size:14px;color:var(--muted)}
+.ticks span.on{color:var(--accent);font-weight:700}
+.rate-label{margin-top:12px;font-size:14.5px;color:var(--accent)}
+
+/* 分段选择 */
+.seg{display:flex;gap:6px;margin-top:10px;padding:4px;background:var(--panel-hi);
+     border:1px solid var(--border);border-radius:var(--r-field)}
+.seg button{
+  flex:1;min-height:40px;border:0;border-radius:calc(var(--r-field) - 4px);
+  background:transparent;color:var(--muted);font-size:14px;font-weight:700;cursor:pointer;
+}
+.seg button.on{background:var(--accent);color:var(--on-accent)}
+
+/* 按钮 */
+.actions{display:flex;gap:14px;margin-top:auto;padding-top:20px}
+.btn{
+  position:relative;flex:1;min-height:52px;border:1px solid transparent;border-radius:var(--r-btn);
+  font-size:15px;font-weight:700;cursor:pointer;background:var(--panel);color:var(--accent);
+}
+.btn.primary{background:var(--accent);color:var(--on-accent)}
+.btn.primary:active{background:var(--accent-hi)}
+.btn.ghost{border-color:var(--accent-dim);flex:0 0 118px}
+.btn.ghost:active{background:var(--panel-hi)}
+.btn .kbd{
+  position:absolute;right:10px;bottom:5px;font-size:10px;font-weight:400;
+  color:var(--hint-on-accent);opacity:.85;
+}
+@media (max-width:520px){ .btn .kbd{display:none} }
+
+/* 结果区 */
+.rule2{height:1px;background:var(--border);margin:13px 0 0}
+
+/* 输出区：上面计算结果、下面搭建演示，中间一条可拖动的高度分隔条 */
+.split{display:flex;flex-direction:column;flex:1;min-height:500px;margin-top:15px}
+.view{display:flex;flex-direction:column;min-height:0}
+#resultView{flex:0 0 auto;height:min(320px,42vh);min-height:96px}
+#buildView{flex:1 1 auto;min-height:80px}
+.view[hidden]{display:none}
+.result{
+  flex:1;min-height:0;padding:14px 16px;overflow:auto;
+  background:var(--input);border:1px solid var(--border);border-radius:var(--r-field);
+  font-family:Consolas,"Cascadia Mono",ui-monospace,monospace;font-size:14px;line-height:1.55;
+  -webkit-overflow-scrolling:touch;
+}
+@media (max-width:900px){ #resultView{height:min(240px,34vh)} }
+
+/* 拖动条 */
+.grip{
+  flex:none;height:16px;margin:3px 0;display:flex;align-items:center;justify-content:center;
+  cursor:row-resize;touch-action:none;border-radius:8px;
+}
+.grip i{display:block;width:46px;height:4px;border-radius:2px;background:var(--border)}
+.grip:hover,.grip.on{background:var(--panel-hi)}
+.grip:hover i,.grip.on i{background:var(--accent)}
+
+/* 搭建演示 */
+.build{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch}
+.bcard{background:var(--input);border:1px solid var(--border);
+       border-radius:var(--r-field);padding:11px 14px;margin-bottom:12px}
+.bcard .t{color:var(--accent);font-weight:700;font-size:14px}
+.bcard .s{color:var(--muted);font-size:12.5px;margin-top:4px}
+.bsect{color:var(--accent-dim);font-weight:700;font-size:13.5px;margin:16px 0 8px}
+.bstep{display:flex;align-items:center;gap:12px;padding:5px 0}
+.bstep .col{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+.bstep .n{font-size:14px}
+.bstep .d{font-size:12.5px;color:var(--muted);line-height:1.45}
+.barrow{display:flex;align-items:center;gap:8px;padding:1px 0 1px 6px;
+        color:var(--muted);font-size:12.5px}
+.barrow .a{color:var(--accent);font-size:15px}
+img.sq{width:52px;height:52px;object-fit:contain;flex:none}
+img.wide{width:104px;height:34px;object-fit:contain;flex:none}
+img.sm{width:26px;height:26px;object-fit:contain;flex:none}
+.blegend{display:grid;grid-template-columns:1fr 1fr;gap:9px 12px}
+.blegend .c{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted)}
+.blegend img.sq{width:38px;height:38px}
+.blegend img.wide{width:76px;height:26px}
+.blegend img.sm{width:22px;height:22px}
+.bnote{display:flex;gap:6px;font-size:12.5px;color:var(--muted);
+       margin:3px 0;line-height:1.5}
+.bnote .dot{color:var(--accent)}
+.bempty{color:var(--ph);font-family:Consolas,ui-monospace,monospace;
+        font-size:14px;line-height:1.8;padding:40px 4px}
+@media (max-width:560px){ .blegend{grid-template-columns:1fr} }
+
+/* 网格蓝图（固定成游戏里那种浅灰底） */
+.bpwrap{overflow:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+.bp{position:relative;background-color:#F1F1F1;border:1px solid #D6D6D6;
+    background-image:linear-gradient(to right,#D6D6D6 1px,transparent 1px),
+                     linear-gradient(to bottom,#D6D6D6 1px,transparent 1px)}
+.bp i{position:absolute;background-repeat:no-repeat;background-size:100% 100%}
+.bplab{position:absolute;transform:translate(-50%,-100%);background:#fff;
+       border:1px solid #D6D6D6;border-radius:2px;color:#2B2B2B;
+       font-size:9px;line-height:1.35;padding:0 2px;white-space:nowrap}
+.bpcap{display:flex;align-items:center;justify-content:space-between;gap:10px;
+       font-size:12.5px;color:var(--muted);margin-bottom:6px}
+.bpctl{display:flex;align-items:center;gap:6px;flex:none}
+.zbtn{
+  min-width:30px;height:26px;padding:0 7px;border:1px solid var(--border);border-radius:8px;
+  background:var(--panel-hi);color:var(--accent);font-size:14px;line-height:1;cursor:pointer;
+}
+.zbtn:active{background:var(--accent);color:var(--on-accent)}
+.zbtn.res{font-size:12px;color:var(--muted)}
+.zval{font-family:Consolas,ui-monospace,monospace;font-size:12px;color:var(--muted);
+      min-width:40px;text-align:center}
+.bpcaptxt{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0}
+.bpzoom{
+  padding:0;border:0;background:transparent;color:var(--accent);
+  font:inherit;font-weight:700;cursor:pointer;
+}
+.bpzoom:hover{color:var(--accent-hi);text-decoration:underline}
+
+/* 放大查看：独立浮层，按应用里一格 58px 的大图显示 */
+html.viewer-open,html.viewer-open body{overflow:hidden}
+html.grip-drag,html.grip-drag body{user-select:none}
+.viewer{
+  position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;
+  padding:16px;background:rgba(0,0,0,.62);backdrop-filter:blur(3px);
+}
+.viewer[hidden]{display:none}
+.viewer-box{
+  display:flex;flex-direction:column;width:min(1180px,100%);height:min(900px,100%);
+  background:var(--panel);border:1px solid var(--accent-dim);border-radius:var(--r-panel);
+  box-shadow:0 24px 80px rgba(0,0,0,.55);overflow:hidden;
+}
+.viewer-head{
+  display:flex;align-items:center;gap:14px;padding:12px 16px;
+  border-bottom:1px solid var(--border);flex:none;min-width:0;
+}
+.viewer-title{
+  flex:1;min-width:0;font-weight:700;font-size:15px;color:var(--accent);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.viewer-body{
+  flex:1;min-height:0;overflow:auto;padding:14px;background:var(--input);
+  -webkit-overflow-scrolling:touch;
+}
+.viewer-body .bpwrap{width:max-content;margin:0 auto;overflow:visible;padding:0}
+.viewer-foot{
+  flex:none;padding:8px 16px;border-top:1px solid var(--border);
+  font-size:12.5px;color:var(--muted);
+}
+.viewer-close{
+  flex:none;width:34px;height:34px;border:1px solid var(--border);border-radius:10px;
+  background:var(--panel-hi);color:var(--text);font-size:20px;line-height:1;cursor:pointer;
+}
+.viewer-close:hover{background:var(--accent);color:var(--on-accent)}
+@media (max-width:560px){
+  .viewer{padding:8px}
+  .viewer-head{padding:10px 12px;gap:8px}
+  .viewer-body{padding:8px}
+}
+.ln{white-space:pre-wrap;word-break:break-word}
+.ln.big{color:var(--accent);font-size:17px;font-weight:700;margin:9px 0}
+.ln.accent{color:var(--accent);font-weight:700;margin:7px 0}
+.ln.body{color:var(--text);margin:5px 0;text-indent:0}
+.ln.muted{color:var(--muted);margin:4px 0}
+.ln.warn{color:var(--amber);margin:6px 0}
+.ln.error{color:var(--danger);font-weight:700;margin:6px 0}
+.ln.section{color:var(--accent-dim);font-weight:700;margin:14px 0 7px}
+.ln.placeholder{color:var(--ph);text-align:center;margin-top:70px}
+.foot{font-size:11.5px;color:var(--muted);text-align:center;margin-top:14px}
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="head">
+    <div class="titles">
+      <h1>终末地 · 电池配比计算器</h1>
+      <p>ENDFIELD&nbsp;&nbsp;/&nbsp;&nbsp;BATTERY&nbsp;&nbsp;RATIO&nbsp;&nbsp;CALCULATOR</p>
+    </div>
+    <div class="dropdown right" id="themeSel">
+      <button class="dropbtn" id="themeBtn" type="button" aria-haspopup="listbox">
+        <span class="swatch"><i id="sw1"></i><i id="sw2"></i></span>
+        <span id="themeName">黄灰主题</span>
+        <span class="caret">▾</span>
+      </button>
+      <div class="droplist right" id="themeList" role="listbox"></div>
+    </div>
+  </header>
+
+  <div class="rule"><i></i><b></b></div>
+
+  <main>
+    <section class="panel">
+      <div class="panel-body">
+        <div class="sec"><i></i><h2>计算模式</h2></div>
+        <div class="seg" id="modeSeg">
+          <button type="button" data-mode="normal">简单模式</button>
+          <button type="button" data-mode="precise">精确模式</button>
+        </div>
+        <p class="hint" id="modeHint"></p>
+
+        <div class="sec"><i></i><h2>系统总耗电</h2></div>
+        <input class="field" id="power" type="number" inputmode="decimal"
+               autocomplete="off" placeholder="例如 1500">
+
+        <div class="sec"><i></i><h2>电池种类</h2></div>
+        <div class="dropdown battsel" id="battSel">
+          <button class="dropbtn" id="battBtn" type="button" aria-haspopup="listbox">
+            <img id="battThumb" alt="">
+            <span class="col">
+              <span class="lbl" id="battName"></span>
+              <span class="sub" id="battPower"></span>
+            </span>
+            <span class="caret">▾</span>
+          </button>
+          <div class="droplist" id="battList" role="listbox"></div>
+        </div>
+
+        <div class="sec"><i></i><h2>电池获取速率</h2></div>
+        <div class="slider-wrap">
+          <input type="range" id="rate" min="6" max="30" step="6" value="6"
+                 aria-label="电池获取速率">
+          <div class="ticks" id="ticks">
+            <span>6</span><span>12</span><span>18</span><span>24</span><span>30</span>
+          </div>
+        </div>
+        <p class="rate-label" id="rateLabel"></p>
+
+        <div class="actions">
+          <button class="btn primary" id="calcBtn" type="button">开始计算<span class="kbd">Enter 计算</span></button>
+          <button class="btn ghost" id="clearBtn" type="button">清空</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-body">
+        <div class="sec"><i></i><h2>输出</h2></div>
+        <div class="seg" id="outputSeg">
+          <button type="button" data-view="result">计算结果</button>
+          <button type="button" data-view="build">搭建演示</button>
+        </div>
+        <div class="rule2"></div>
+        <div class="split" id="split">
+          <div class="view" id="resultView">
+            <div class="result" id="result"></div>
+          </div>
+          <div class="grip" id="grip" title="上下拖动调整高度（双击复位）"><i></i></div>
+          <div class="view" id="buildView">
+            <div class="build" id="build"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <p class="foot">系统自带发电 200 · 电池发电时间 40 秒</p>
+</div>
+
+<div class="viewer" id="bpViewer" hidden>
+  <div class="viewer-box" role="dialog" aria-modal="true" aria-labelledby="bpViewerTitle">
+    <div class="viewer-head">
+      <span class="viewer-title" id="bpViewerTitle">网格蓝图 · 放大查看</span>
+      <span class="bpctl">
+        <button class="zbtn" type="button" data-vzoom="out" title="缩小">−</button>
+        <span class="zval" id="bpViewerZoom">100%</span>
+        <button class="zbtn" type="button" data-vzoom="in" title="放大">＋</button>
+        <button class="zbtn res" type="button" data-vzoom="fit" title="适应窗口宽度">适应</button>
+      </span>
+      <button class="viewer-close" id="bpViewerClose" type="button" aria-label="关闭">×</button>
+    </div>
+    <div class="viewer-body" id="bpViewerBody"><div class="bpwrap" id="bpViewerWrap"></div></div>
+    <div class="viewer-foot" id="bpViewerFoot"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ===================== 数据 ===================== */
+const IMAGES = {
+@@IMAGES@@
+};
+
+/* 搭建演示元件图：file -> {label, shape} */
+const BUILD_TILES = [
+  {file:"build_pickup.png",   label:"仓库取货口", shape:"wide"},
+  {file:"build_deposit.png",  label:"仓库存货口", shape:"wide"},
+  {file:"build_thermal.png",  label:"热能池",     shape:"sq"},
+  {file:"build_splitter.png", label:"分流器",     shape:"sq"},
+  {file:"build_merger.png",   label:"汇流器",     shape:"sq"},
+  {file:"build_belt.png",     label:"传送带",     shape:"sm"},
+  {file:"build_corner.png",   label:"传送带拐角", shape:"sm"},
+  {file:"build_bridge.png",   label:"物流桥",     shape:"sq"}
+];
+
+const THEMES = {
+  huanghui:{name:"黄灰主题", sw:["#2A2A2A","#FFD400"], meta:"#1E1E1E"},
+  bailan  :{name:"白蓝主题", sw:["#FFFFFF","#1E6FD9"], meta:"#EDF1F7"},
+  huangzi :{name:"黄紫主题", sw:["#241A33","#FFD400"], meta:"#191223"}
+};
+
+const BATTERIES = [
+  {name:"谷底低容电池", power:220,  file:"gudi_low.png"},
+  {name:"谷底中容电池", power:420,  file:"gudi_mid.png"},
+  {name:"谷底高容电池", power:1100, file:"gudi_high.png"},
+  {name:"武陵低容电池", power:1600, file:"wuling_low.png"},
+  {name:"武陵中容电池", power:3200, file:"wuling_mid.png"}
+];
+
+const RATES = [6,12,18,24,30];
+
+/* ===================== 计算核心（与桌面版逐行对应） ===================== */
+function isPrime(n){
+  if(n < 2) return false;
+  if(n === 2 || n === 3) return true;
+  if(n % 2 === 0 || n % 3 === 0) return false;
+  const limit = Math.floor(Math.sqrt(n));
+  for(let i = 5; i <= limit; i += 6){
+    if(n % i === 0 || n % (i + 2) === 0) return false;
+  }
+  return true;
+}
+function smallestPrimeFactor(n){
+  if(n % 2 === 0) return 2;
+  for(let p = 3; p * p <= n; p += 2){ if(n % p === 0) return p; }
+  return n;
+}
+function primeFactorization(n){
+  const f = new Map();
+  const add = (k) => f.set(k, (f.get(k) || 0) + 1);
+  let t = n;
+  while(t % 2 === 0){ add(2); t /= 2; }
+  for(let p = 3; p * p <= t; p += 2){ while(t % p === 0){ add(p); t /= p; } }
+  if(t > 1) add(t);
+  return f;
+}
+function recursiveDecompose(n){
+  const f = new Map();
+  const add = (k) => f.set(k, (f.get(k) || 0) + 1);
+  let cur = n;
+  while(cur > 1){
+    if(isPrime(cur)){
+      add(cur);
+      if(cur > 3) cur += 1; else break;
+    }else{
+      const p = smallestPrimeFactor(cur);
+      add(p);
+      cur /= p;
+    }
+  }
+  return f;
+}
+function decomposeTarget(n){
+  /* 精确模式的分解：返回 {factors:{质数:个数}, rules:{质数:{质数:个数}}} */
+  const base = primeFactorization(n);
+  const total = new Map();
+  const rules = new Map();
+  const add = (m,k,v) => m.set(k, (m.get(k) || 0) + v);
+
+  for(const [p, exp] of base){
+    add(total, p, exp);          /* 直接用质因数；质数分流器内部怎么搭写在 rules 里 */
+    if(p > 3) rules.set(p, primeFactorization(p + 1));
+  }
+  const factors = {};
+  [...total.keys()].sort((a,b) => a - b).forEach(k => { factors[k] = total.get(k); });
+  const ruleObj = {};
+  [...rules.keys()].sort((a,b) => a - b).forEach(k => {
+    const one = {};
+    [...rules.get(k).keys()].sort((a,b) => a - b).forEach(q => { one[q] = rules.get(k).get(q); });
+    ruleObj[k] = one;
+  });
+  return {factors, rules:ruleObj};
+}
+function formatOutputLines(n){
+  const {factors, rules} = decomposeTarget(n);
+  const total = new Map(Object.entries(factors).map(([k,v]) => [Number(k), v]));
+  const ruleMap = new Map(Object.entries(rules).map(([k,v]) => [Number(k), new Map(Object.entries(v).map(([q,c]) => [Number(q), c]))]));
+
+  const bigPrimes = [...total.keys()].filter(p => p > 3).sort((a,b) => b - a);
+  let parts = bigPrimes.map(p => `${total.get(p)}个${p}分`);
+  if(total.get(2)) parts.push(`${total.get(2)}个2分`);
+  if(total.get(3)) parts.push(`${total.get(3)}个3分`);
+
+  const lines = [];
+  if(parts.length === 1) lines.push(["需要" + parts[0], "body"]);
+  else if(parts.length) lines.push(["需要" + parts.slice(0,-1).join("、") + "和" + parts[parts.length-1], "body"]);
+
+  const sortedRules = [...ruleMap.keys()].sort((a,b) => b - a);
+  sortedRules.forEach((p, idx) => {
+    const decomp = ruleMap.get(p);
+    const subs = [...decomp.keys()].sort((a,b) => a - b).map(q => `${decomp.get(q)}个${q}分`);
+    let ruleStr;
+    if(subs.length === 1) ruleStr = `${p}分可以视为${p+1}分，即` + subs[0];
+    else ruleStr = `${p}分可以视为${p+1}分，即` + subs.slice(0,-1).join("、") + "和" + subs[subs.length-1];
+    lines.push([(idx === 0 ? "其中" : "    ") + ruleStr, idx === 0 ? "body" : "muted"]);
+  });
+  return lines;
+}
+function fmtNum(x){
+  if(Number.isInteger(x)) return String(x);
+  return x.toFixed(2).replace(/0+$/,"").replace(/\.$/,"");
+}
+/* 质数块的嵌套层数：p 用 p+1 的因子链，其中 >3 的因子还要再套一层 */
+function factorDepth(p){
+  if(p <= 3) return 1;
+  const deeper = factorSeq(p + 1).filter(f => f > 3).map(factorDepth);
+  return 1 + (deeper.length ? Math.max.apply(null, deeper) : 0);
+}
+function ratioDepth(n){
+  if(n <= 1) return 1;
+  return Math.max.apply(null, Object.keys(primeFactorization(n)).map(k => factorDepth(Number(k))));
+}
+const MAX_DEPTH = 2;
+
+function factorText(n){
+  const m = primeFactorization(n);
+  return Object.keys(m).map(Number).sort((a,b)=>a-b)
+    .map(p => m.get(p) === 1 ? String(p) : p + "^" + m.get(p)).join(" × ");
+}
+
+/* 这个比例是否“搭得出来”：层数不超标，且蓝图里没有断头的回流汇流器 */
+/* 是否可接受：只看质数分解层数（层数过多时实际意义较小） */
+function ratioBuildable(n){
+  return n >= 2 && ratioDepth(n) <= MAX_DEPTH;
+}
+
+function calculate(totalPower, batteryOutput, ratePerMin, preciseMode){
+  const lines = [];
+  const consume = totalPower - 200;
+  if(consume <= 0){
+    lines.push(["系统总耗电不高于系统自带的 200，无需使用电池。", "warn"]);
+    return {lines, info:null};
+  }
+  if(batteryOutput <= 0){
+    lines.push(["单电池发电量必须大于 0。", "error"]);
+    return {lines, info:null};
+  }
+  let number = 0;
+  while(number * batteryOutput < consume) number++;
+
+  const model = 60 / ratePerMin;
+  const gap = consume - (number - 1) * batteryOutput;   // 掉电期间每秒的净耗电量
+
+  const timeSec = Math.floor(40 * batteryOutput / gap); // 理论间隔时间（秒）
+  const total = Math.floor(3600 / timeSec) + 90 * (number - 1);
+  const deadline = Math.floor(100000 / gap) + 40;       // 耗尽时间（秒）
+
+  lines.push([`需要 ${number} 个电池`, "big"]);
+
+  /* ① 间隔时间不到电池的 40 秒发电时间 -> 改用 40 秒 */
+  let interval = timeSec;
+  if(interval <= 40){
+    interval = 40;
+    lines.push([`由于计算所得实际间隔时间 ${timeSec} 秒小于或等于 40 秒，`
+              + `而电池的发电时间为 40 秒，故将间隔时间改为 40 秒。`, "warn"]);
+  }
+
+  /* ② 系统电量会先耗尽 -> 改用耗尽时间 */
+  if(deadline < interval){
+    interval = deadline;
+    lines.push([`由于系统内电量耗尽时热能池仍未获得电池，`
+              + `将间隔时间改为耗尽时间 ${deadline} 秒。`, "warn"]);
+  }
+
+  /* ③ 间隔时间按电池获取速率换算成“比例” */
+  const ratioTarget = interval * ratePerMin / 60;
+  lines.push([`应每隔 ${interval} 秒使用一次电池，`
+            + `按 ${ratePerMin} 个/分钟换算的比例为 ${Math.trunc(ratioTarget)}。`, "body"]);
+
+  if(preciseMode){
+    let ratio = Math.max(Math.trunc(ratioTarget), 1);
+    if(!ratioBuildable(ratio, ratePerMin, batteryOutput, interval)){
+      const original = ratio;
+      while(ratio > 2 && !ratioBuildable(ratio, ratePerMin, batteryOutput, interval)) ratio--;
+      if(ratio !== original){
+        lines.push([`比例 ${original} 的质数分解层数过多、实际意义较小；`
+          + `已改用接近的 ${ratio}（${factorText(ratio)}）代替。`, "warn"]);
+      }
+    }
+    lines.push(["因子分解", "section"]);
+    lines.push(...formatOutputLines(ratio));
+    lines.push([`一小时理论消耗 ${total + 1} 个电池`, "accent"]);
+    const dec = decomposeTarget(ratio);
+    return {lines, info:{
+      mode:"precise", number, rate:ratePerMin, model, battery:batteryOutput,
+      interval, timeSec, deadline, ratio,
+      factors:dec.factors, rules:dec.rules, hour:total + 1
+    }};
+  }
+
+  const searchMax = Math.max(ratioTarget, 1);
+  const max3 = Math.floor(Math.log(searchMax) / Math.log(3));
+  const max2 = Math.floor(Math.log(searchMax) / Math.log(2));
+
+  let result = 0, r2 = 0, r3 = 0;
+  for(let c3 = 0; c3 <= max3; c3++){
+    for(let c2 = 0; c2 <= max2; c2++){
+      const v = Math.pow(2, c2) * Math.pow(3, c3);
+      if(result <= v && v <= ratioTarget){ result = v; r2 = c2; r3 = c3; }
+    }
+  }
+
+  result = Math.max(result, 1);
+
+  const actualGap = interval - result * model;
+  const project = Math.floor(3600 / (result * model)) + 90 * (number - 1);
+  const percent = (project + 1) / (total + 1) * 100 - 100;
+
+  lines.push([`${r2} 个二分 和 ${r3} 个三分 可以完成任务`, "big"]);
+  lines.push([`实际计算比例为 ${result}，间隔时间为 ${fmtNum(result * model)} 秒，`
+            + `目标间隔时间为 ${interval} 秒，差距为 ${fmtNum(actualGap)} 秒。`, "body"]);
+  lines.push([`一小时理论消耗 ${total + 1} 个电池，实际消耗 ${project + 1} 个电池，`
+            + `百分比误差为 ${percent.toFixed(2)}%`, "accent"]);
+  return {lines, info:{
+    mode:"simple", number, rate:ratePerMin, model, battery:batteryOutput,
+    interval, timeSec, deadline, ratio:ratioTarget,
+    result, pow2:r2, pow3:r3, actualInterval:result * model, hour:project + 1
+  }};
+}
+
+/* ===================== 游戏内网格蓝图（竖排） ===================== */
+const DIR_N = 0, DIR_E = 1, DIR_S = 2, DIR_W = 3;
+const mod4 = (v) => ((v % 4) + 4) % 4;
+const rng = (a, b) => { const out = []; for(let i = a; i < b; i++) out.push(i); return out; };
+const ck = (c, r) => c + "," + r;
+
+/* 一条主链的列几何 */
+class Geo {
+  constructor(chain, fbLanes, beltsL, beltsR, dumpL, dumpR){
+    this.chain = chain; this.fbLanes = fbLanes;
+    this.beltsL = beltsL; this.beltsR = beltsR;
+    this.dumpL = dumpL; this.dumpR = dumpR;
+  }
+  fb(level){ return this.fbLanes[Math.min(level, this.fbLanes.length - 1)]; }
+}
+
+/* 单链（9 列）：0-2 左存货口 | 1 左通道 | 2 左带 | 3 回流 | 4 主链 | 5,6 右带 | 7 右通道 | 6-8 右存货口 */
+const GEO_SINGLE = new Geo(4, [3, 5, 2, 6], [2], [5, 6], 1, 7);
+/* 全速双份：每份只有一条返回支路 -> 紧凑 13 列，回流走内侧、多余出口全朝外 */
+const GEO_A = new Geo(4, [5, 3, 2, 1], [3, 2], [], 2, null);
+const GEO_B = new Geo(8, [7, 9, 10, 11], [], [9, 10], null, 10);
+const CENTER = 6;
+const COLS_SINGLE = 9, COLS_DOUBLE = 13;
+/* 某一份需要第二条返回支路 -> 宽版 17 列（带内侧通道） */
+/* 副本主链内收到 5 / 11 列，中间列 8：两侧横带从 3 格缩到 2 格 */
+const GEO_A2 = new Geo(5, [6, 4, 7, 2], [4], [7], 3, 7);
+const GEO_B2 = new Geo(11, [10, 12, 9, 14], [9], [12], 9, 13);
+const CENTER2 = 8, COLS_DOUBLE2 = 15;
+
+class Blueprint {
+  constructor(cols){
+    this.cells = {};
+    this.cols = cols;
+    this.rows = 0;
+    this.dumps = [];                  /* {row, chain, side, lane} */
+    this.ports = new Set();           /* "列,行,侧"：已被占用的输出口 */
+    this.fbPath = new Set();          /* "列,行"：回流带；交叉处换物流桥 */
+    this.warnings = [];
+  }
+  put(col, row, file, label, span, spanRows){
+    if(col < 0 || row < 0) return;
+    span = span || 1; spanRows = spanRows || 1;
+    this.cells[ck(col, row)] = {col, row, file, label: label || "", span, spanRows};
+    this.cols = Math.max(this.cols, col + span);
+    this.rows = Math.max(this.rows, row + spanRows);
+  }
+  belt(col, row, dir){ this.put(col, row, "build_belt_" + mod4(dir - DIR_E) + ".png"); }
+  corner(col, row, enter, out){
+    const k = mod4(enter - 2);
+    if(out === mod4(enter - 1)) this.put(col, row, "build_corner_" + k + ".png");
+    else this.put(col, row, "build_corner_m" + k + ".png");
+  }
+  device(col, row, kind, rot, label){ this.put(col, row, "build_" + kind + "_" + rot + ".png", label); }
+  bridge(col, row){ this.put(col, row, "build_bridge.png", "物流桥"); }
+  dump(row, chain, side, lane){ this.dumps.push({row, chain, side, lane}); }
+}
+
+/* 这个质数块最上面那个分流器有几个输出口（2 或 3）
+   块里每个分流器都要向上输出（占一个口），顶上那个还要管本块回流，
+   所以口多的必须摆上面。 */
+function topPorts(p){
+  const seq = factorSeq(p + 1, false);
+  const last = seq[seq.length - 1];
+  return last <= 3 ? last : topPorts(last);
+}
+
+function factorSeq(n, wrap){
+  /* 因子链顺序（从下往上）：
+     1) 输出口多的排上面 —— 3 分比 2 分多一个口；比到块时看这个块最上面那个分流器；
+     2) 输出口数量相同的，先摆较大的那个质数（大的靠下）。
+     例：13 分 = 三个 2 分组成的 7 分块在下，再串一个 2 分在上。 */
+  const m = primeFactorization(n);
+  const seq = [];
+  [...m.keys()].filter(x => x > 3).sort((a, b) => b - a).forEach(p => {
+    for(let i = 0; i < m.get(p); i++) seq.push(p);
+  });
+  [2, 3].forEach(p => {
+    if(m.has(p)) for(let i = 0; i < m.get(p); i++) seq.push(p);
+  });
+  const portCount = (f) => (f <= 3 && !wrap) ? f : topPorts(f);
+  return seq.sort((a, b) => (portCount(a) - portCount(b)) || (b - a));
+}
+
+/* 块占行数：回流汇流器 1 格 + 因子链（嵌套质数递归）
+   wrap=true 时每个因子再包一层“改”结构（组成回路层数 +1） */
+/* 块占行数：回流汇流器 1 格 + 因子链（嵌套质数递归）
+   borrow=true 时本块复用父块的汇流器，自己不再占那一格 */
+function blockHeight(p, wrap, buf, borrow){
+  let h = borrow ? 0 : 1 + (buf || 0);
+  factorSeq(p + 1, wrap).forEach((f, i) => {
+    if(f > 3 || wrap){
+      /* 第一个因子就坐在本块的汇流器上（复用），其余都在分流器之上 */
+      h += blockHeight(f, false, i === 0 ? 0 : 1, i === 0);
+    }else{
+      h += 1;
+    }
+  });
+  return h;
+}
+
+function emitDump(bp, geo, row, side){
+  bp.dump(row, geo.chain, side, side === DIR_W ? geo.dumpL : geo.dumpR);
+}
+
+/* 从主链那一格水平铺带走到本层通道列（不够近就补格，遇到别的线用桥） */
+function leadsToLane(bp, geo, row, lane){
+  const step = (lane > geo.chain) ? DIR_E : DIR_W;
+  let cc = (lane > geo.chain) ? geo.chain + 1 : geo.chain - 1;
+  while(cc !== lane){
+    if(bp.cells[ck(cc, row)]) bp.bridge(cc, row);
+    else bp.belt(cc, row, step);
+    cc += (step === DIR_E) ? 1 : -1;
+  }
+}
+
+/* 摆一个质数分流器块（嵌套质数递归展开）
+   返回 {row, lastRow, freeAt} */
+function placeBlock(bp, base, p, geo, level, needOutput, wrap, buf, rate, ascending, borrow){
+  level = level || 0;
+  const lane = geo.fb(level);
+  const fbSide = (lane < geo.chain) ? DIR_W : DIR_E;
+  const outer = (fbSide === DIR_W) ? DIR_E : DIR_W;
+
+  let row = base;
+  let fbRow;
+  if(borrow){
+    /* 下面紧挨着的就是父块的汇流器：回流并进去，本块不再单独立一个 */
+    fbRow = base + 1;
+  }else{
+    /* 缓冲带在汇流器下方：从上一级分流器一路连续接到汇流器 */
+    for(let k = 0; k < (buf || 0); k++){
+      bp.belt(geo.chain, row, DIR_N);
+      row -= 1;
+    }
+    bp.device(geo.chain, row, "merger", 0, p + " 分·回流");
+    fbRow = row;
+    row -= 1;
+  }
+
+  const factors = factorSeq(p + 1, wrap);
+  let lastRow = fbRow, freeAt = null, fbOk = true;
+  for(let i = 0; i < factors.length; i++){
+    const f = factors[i];
+    const isLast = (i === factors.length - 1);
+    if(f <= 3 && !wrap){
+      bp.device(geo.chain, row, "splitter", 0, f + " 分");
+      if(isLast){
+        leadsToLane(bp, geo, row, lane);
+        bp.corner(lane, row, fbSide === DIR_W ? DIR_E : DIR_W, DIR_S);
+        bp.fbPath.add(ck(lane, row));
+        bp.ports.add(ck(geo.chain, row) + "," + fbSide);
+        if(f < 3){
+          /* 二分只有两个输出口：keep + 本块回流，已经满了，没有多余口给上层 */
+          freeAt = null;
+        }else{
+          /* 三分有 2 个侧口：一个给本块回流，另一个留给上一级的汇流器
+             （上一级用不上时，收尾的 fixThreePorts 会把它接到返货通道） */
+          freeAt = {row, side: outer};
+        }
+      }else{
+        emitDump(bp, geo, row, outer);
+        if(f >= 3) emitDump(bp, geo, row, fbSide);
+      }
+      lastRow = row;
+      row -= 1;
+    }else{
+      /* 嵌套子块：第一个因子下面接着本块的汇流器（直接复用），其余坐在分流器上 */
+      const sub = placeBlock(bp, row, f, geo, level + 1, isLast, false,
+                             (i === 0) ? 0 : 1, null, ascending, i === 0);
+      row = sub.row; lastRow = sub.lastRow;
+      if(!isLast) continue;
+      /* 子块末级是三分时会给上一级留一个侧口：把它接到本块（上一级）的汇流器上 */
+      if(sub.freeAt){
+        const r2 = sub.freeAt.row, side = sub.freeAt.side;
+        if((side === DIR_E) === (lane > geo.chain)){
+          const list2 = (side === DIR_E) ? rng(geo.chain + 1, lane) : rng(lane + 1, geo.chain);
+          const step2 = (side === DIR_E) ? DIR_E : DIR_W;
+          const enter2 = (side === DIR_E) ? DIR_W : DIR_E;
+          list2.forEach(cc => {
+            if(bp.cells[ck(cc, r2)]) bp.bridge(cc, r2);
+            else bp.belt(cc, r2, step2);
+          });
+          bp.corner(lane, r2, enter2, DIR_S);
+          bp.fbPath.add(ck(lane, r2));
+          lastRow = Math.max(lastRow, r2);
+        }else{
+          bp.warnings.push(p + " 分块给上层留的侧口在另一侧，这一级回流改从本块末级接出");
+        }
+      }
+      freeAt = null;
+    }
+  }
+
+  const mgFree = (fbSide === DIR_W) ? DIR_E : DIR_W;
+  if(!fbOk) return {row, lastRow, freeAt, mgRow: fbRow, mgFree};   /* 没有可用来源就整条不画 */
+  rng(lastRow + 1, fbRow).forEach(rr => {
+    if(bp.cells[ck(lane, rr)]) bp.bridge(lane, rr);   /* 已经有别的线就跨过去 */
+    else bp.belt(lane, rr, DIR_S);
+    bp.fbPath.add(ck(lane, rr));
+  });
+  const step = (lane < geo.chain) ? DIR_E : DIR_W;
+  bp.corner(lane, fbRow, DIR_N, step);
+  const list = (lane < geo.chain) ? rng(lane + 1, geo.chain) : rng(geo.chain + 1, lane);
+  list.forEach(cc => {
+    if(bp.cells[ck(cc, fbRow)]) bp.bridge(cc, fbRow);
+    else bp.belt(cc, fbRow, step);
+    bp.fbPath.add(ck(cc, fbRow));
+  });
+  bp.fbPath.add(ck(lane, fbRow));
+  return {row, lastRow, freeAt, mgRow: fbRow, mgFree};
+}
+
+/* 块内是否需要第二条返回通道（非末级三分、或含嵌套质数块） */
+function needsInner(p){
+  const factors = factorSeq(p + 1);
+  for(let i = 0; i < factors.length; i++){
+    const last = (i === factors.length - 1);
+    if(factors[i] > 3 || (!last && factors[i] >= 3)) return true;
+  }
+  return false;
+}
+
+/* 全速双份：两份并行块，返回 {mergeRow, splitRow} */
+function placeDoubleBlocks(bp, bottom, p, ga, gb, buf){
+  /* 副本里 2 分靠前、3 分靠后更省空间 */
+  const rows = blockHeight(p, false, buf, null, true);
+  const top = bottom - rows + 1;
+  placeBlock(bp, bottom, p, ga, 0, false, false, buf, null, true);
+  placeBlock(bp, bottom, p, gb, 0, false, false, buf, null, true);
+  return {mergeRow: top - 1, splitRow: bottom + 1};
+}
+
+/* 中间列：底部分流用二分、顶部合流用汇流器；横带遇到通道格改放物流桥 */
+function placeDoubleJoin(bp, mergeRow, splitRow, center, ga, gb){
+  const lay = (cc, row, dir) => {
+    if(bp.cells[ck(cc, row)]) bp.bridge(cc, row);
+    else bp.belt(cc, row, dir);
+  };
+  bp.corner(ga.chain, mergeRow, DIR_S, DIR_E);
+  bp.corner(gb.chain, mergeRow, DIR_S, DIR_W);
+  rng(ga.chain + 1, center).forEach(cc => lay(cc, mergeRow, DIR_E));
+  rng(center + 1, gb.chain).forEach(cc => lay(cc, mergeRow, DIR_W));
+  bp.put(center, mergeRow, "build_merger_0.png", "合流");
+
+  bp.corner(ga.chain, splitRow, DIR_E, DIR_N);
+  bp.corner(gb.chain, splitRow, DIR_W, DIR_N);
+  rng(ga.chain + 1, center).forEach(cc => lay(cc, splitRow, DIR_W));
+  rng(center + 1, gb.chain).forEach(cc => lay(cc, splitRow, DIR_E));
+  bp.put(center, splitRow, "build_splitter_0.png", "二分·全速");
+}
+
+/* 从 srcCol 的 side 侧横着铺到 lane；路上遇到别的带子就用物流桥跨过去。
+   先整条路检查一遍，走得通才动笔（不留半截路） */
+function routeLine(bp, row, srcCol, side, lane){
+  const dc = (side === DIR_W) ? -1 : 1;
+  const cells = [];
+  let cc = srcCol + dc;
+  while(cc >= 0 && cc < bp.cols && cc !== lane){ cells.push(cc); cc += dc; }
+  if(cc !== lane) return false;
+  for(const x of cells){
+    const cur = bp.cells[ck(x, row)];
+    if(cur && !(cur.file.indexOf("build_belt") === 0 ||
+                cur.file.indexOf("build_bridge") === 0)) return false;
+  }
+  for(const x of cells){
+    if(bp.cells[ck(x, row)]) bp.bridge(x, row);
+    else bp.belt(x, row, side);
+  }
+  return true;
+}
+
+/* 铺横向多余出口传送带；跨过纵向回流带/别的带子时用物流桥。
+   真正接上返货通道的行记进 joins：lane -> Map(row -> 流向) */
+function drawDumps(bp, joins){
+  bp.dumps.forEach(({row, chain, side, lane}) => {
+    if(lane == null) return;
+    if(routeLine(bp, row, chain, side, lane)){
+      if(!joins.has(lane)) joins.set(lane, new Map());
+      joins.get(lane).set(row, side);
+    }
+  });
+  return joins;
+}
+
+/* 元件的口：侧就是罗盘方向；enter 指这一侧的来路 */
+function tilePorts(cell){
+  const ins = new Set(), outs = new Set();
+  if(!cell) return {ins, outs};
+  const f = cell.file;
+  const all = [DIR_N, DIR_E, DIR_S, DIR_W];
+  if(f.indexOf("build_splitter") === 0){
+    const rot = parseInt(f.charAt(f.length - 5), 10) || 0;
+    ins.add(mod4(DIR_S + rot));
+    [DIR_N, DIR_W, DIR_E].forEach(d => outs.add(mod4(d + rot)));
+  }else if(f.indexOf("build_merger") === 0){
+    const rot = parseInt(f.charAt(f.length - 5), 10) || 0;
+    [DIR_S, DIR_W, DIR_E].forEach(d => ins.add(mod4(d + rot)));
+    outs.add(mod4(DIR_N + rot));
+  }else if(f.indexOf("build_belt_") === 0){
+    const d = mod4(parseInt(f.charAt(11), 10) + 1);
+    ins.add(mod4(d + 2)); outs.add(d);
+  }else if(f.indexOf("build_corner_m") === 0){
+    const enter = mod4(parseInt(f.charAt(14), 10) + 2);
+    ins.add(enter); outs.add(mod4(enter + 1));
+  }else if(f.indexOf("build_corner_") === 0){
+    const enter = mod4(parseInt(f.charAt(13), 10) + 2);
+    ins.add(enter); outs.add(mod4(enter - 1));
+  }else if(f.indexOf("build_bridge") === 0){
+    all.forEach(d => { ins.add(d); outs.add(d); });
+  }else if(f.indexOf("build_pickup") === 0){
+    outs.add(DIR_N);
+  }else if(f.indexOf("build_gate") === 0){
+    ins.add(DIR_S); outs.add(DIR_N);
+  }else if(f.indexOf("build_deposit") === 0){
+    ins.add(DIR_N);
+  }
+  return {ins, outs};
+}
+
+function accepts(cell, side){ return tilePorts(cell).ins.has(side); }
+
+/* 三分分流器有 3 个输出口：只要有一个口没接上，游戏里它就退化成二分、比例跟着错。
+   缺哪侧就从哪侧接到最近的返货通道去（由近到远挨个试）。 */
+function fixThreePorts(bp, channels, joins){
+  const list = Object.values(bp.cells).sort((a, b) => (a.row - b.row) || (a.col - b.col));
+  list.forEach(cell => {
+    const lab = cell.label || "";
+    if(cell.file.indexOf("splitter") < 0 || lab.indexOf("3 ") !== 0) return;
+    [DIR_W, DIR_E].forEach(side => {
+      const dc = (side === DIR_W) ? -1 : 1;
+      const nb = bp.cells[ck(cell.col + dc, cell.row)];
+      if(accepts(nb, mod4(side + 2))) return;
+      if(nb && !(nb.file.indexOf("build_belt") === 0 ||
+                 nb.file.indexOf("build_bridge") === 0)) return;
+      const cands = [...channels]
+        .filter(l => ((l < cell.col) === (side === DIR_W)) && Math.abs(l - cell.col) > 1)
+        .sort((a, b) => Math.abs(a - cell.col) - Math.abs(b - cell.col));
+      for(const lane of cands){
+        if(routeLine(bp, cell.row, cell.col, side, lane)){
+          if(!joins.has(lane)) joins.set(lane, new Map());
+          joins.get(lane).set(cell.row, side);
+          break;
+        }
+      }
+    });
+  });
+  return joins;
+}
+
+/* 返货通道：左右各一条直线，整条线由汇流器串起来（不拐弯），
+   主回路出来的返回带直接横着接进汇流器，最下面一格接仓库存货口。
+   组合接法里副本的出口落在中间那几条竖列上：同样一条直线走到底，
+   再横一格并进两侧通道一起下去。 */
+function buildLanes(bp, joins, portRow, geo){
+  const laneL = geo.dumpL, laneR = geo.dumpR;
+  const jogRow = portRow - 1;
+  const drawLine = (lane, rows, endRow) => {
+    for(let rr = Math.min(...rows.keys()); rr < endRow; rr++){
+      const cur = bp.cells[ck(lane, rr)];
+      if(cur && cur.file.indexOf("build_belt") !== 0) continue;
+      if(rows.has(rr)) bp.device(lane, rr, "merger", 2);
+      else bp.belt(lane, rr, DIR_S);
+    }
+  };
+  [...joins.keys()].filter(l => l !== laneL && l !== laneR).sort((a, b) => a - b)
+    .forEach(lane => {
+      const rows = joins.get(lane);
+      if(!rows || !rows.size) return;
+      drawLine(lane, rows, jogRow);
+      const target = (lane < geo.chain) ? laneL : laneR;
+      if(target == null) return;
+      const flow = (target < lane) ? DIR_W : DIR_E;
+      bp.corner(lane, jogRow, DIR_N, flow);
+      let cc = lane + ((flow === DIR_W) ? -1 : 1);
+      while(cc !== target){
+        if(!bp.cells[ck(cc, jogRow)]) bp.belt(cc, jogRow, flow);
+        else bp.bridge(cc, jogRow);
+        cc += (flow === DIR_W) ? -1 : 1;
+      }
+      if(!joins.has(target)) joins.set(target, new Map());
+      joins.get(target).set(jogRow, flow);
+      joins.delete(lane);
+    });
+  [laneL, laneR].forEach(lane => {
+    if(lane == null) return;
+    const rows = joins.get(lane);
+    if(!rows || !rows.size) return;
+    drawLine(lane, rows, portRow);
+  });
+}
+
+/* 这一格有没有东西（多格元件占的那几格也算） */
+function occupied(bp, col, row){
+  if(bp.cells[ck(col, row)]) return true;
+  return Object.values(bp.cells).some(c =>
+    ((c.span || 1) > 1 || (c.spanRows || 1) > 1) &&
+    col >= c.col && col < c.col + (c.span || 1) &&
+    row >= c.row && row < c.row + (c.spanRows || 1));
+}
+
+/* 往上压紧：热能池固定占 0~1 行，主链第一格紧贴着它 */
+function compact(bp, top){
+  const rows = Object.values(bp.cells)
+    .filter(c => c.file.indexOf("build_thermal") !== 0).map(c => c.row);
+  if(!rows.length) return;
+  const shift = Math.min(...rows) - top;
+  if(shift <= 0) return;
+  const cells = {};
+  Object.values(bp.cells).forEach(c => {
+    c.row -= shift;
+    cells[ck(c.col, c.row)] = c;
+  });
+  bp.cells = cells;
+  bp.dumps.forEach(d => { d.row -= shift; });
+  bp.fbPath = new Set([...bp.fbPath].map(k => {
+    const p = k.split(",");
+    return ck(parseInt(p[0], 10), parseInt(p[1], 10) - shift);
+  }));
+  bp.rows = Math.max(0, bp.rows - shift);
+}
+
+/* 去掉左右空出来的列 */
+function trimColumns(bp){
+  const list = Object.values(bp.cells);
+  if(!list.length) return;
+  const left = Math.min(...list.map(c => c.col));
+  const right = Math.max(...list.map(c => c.col + (c.span || 1) - 1));
+  if(left === 0 && right === bp.cols - 1) return;
+  if(left){
+    const cells = {};
+    list.forEach(c => { c.col -= left; cells[ck(c.col, c.row)] = c; });
+    bp.cells = cells;
+    bp.dumps.forEach(d => {
+      d.chain -= left;
+      if(d.lane != null) d.lane -= left;
+    });
+    bp.fbPath = new Set([...bp.fbPath].map(k => {
+      const p = k.split(",");
+      return ck(parseInt(p[0], 10) - left, parseInt(p[1], 10));
+    }));
+  }
+  bp.cols = right - left + 1;
+}
+
+/* 物品准入口的图：按电池种类选（与 BATTERIES 同序） */
+function gateTile(info){
+  if(!info) return null;
+  const b = BATTERIES.find(x => Math.abs(x.power - (info.battery || 0)) < 1e-6);
+  return b ? "build_gate_" + b.file : null;
+}
+
+/* 放热能池（2x2，占 0~1 行），并把中格到主链之间接满传送带 */
+function putThermal(bp, geo){
+  [geo.chain - 1, geo.chain].forEach(cc => {
+    [0, 1].forEach(rr => { delete bp.cells[ck(cc, rr)]; });
+  });
+  bp.put(geo.chain - 1, 0, "build_thermal_big.png", "热能池", 2, 2);
+  for(let rr = 2; rr < bp.rows; rr++){
+    if(bp.cells[ck(geo.chain, rr)]) break;
+    bp.belt(geo.chain, rr, DIR_N);
+  }
+}
+
+function buildBlueprint(info){
+  if(!info) return null;
+  const full = info.rate > 18;
+
+  const stages = [];
+  if(info.mode === "simple"){
+    for(let i = 0; i < info.pow2; i++) stages.push(["n", 2]);
+    for(let i = 0; i < info.pow3; i++) stages.push(["n", 3]);
+  }else{
+    Object.keys(info.factors).map(Number).sort((a, b) => a - b).forEach(p => {
+      for(let i = 0; i < info.factors[p]; i++) stages.push([p <= 3 ? "n" : "P", p]);
+    });
+  }
+  if(!stages.length) return null;
+
+  /* 速率 > 18 时前置质数块必须用组合（二分 -> 并联两份 -> 汇流）接法 */
+  const leadDouble = full && stages[0][0] === "P";
+  const lead = leadDouble ? stages[0] : null;
+  const rest = leadDouble ? stages.slice(1) : stages;
+  /* 缓冲口径：主链上"分流器 -> 汇流器"直接贴住时要垫一格（质数分流器的回流会把
+     汇流器堵住，本该向上走的电池就被挤进两侧返货支路）；汇流器下面是汇流器或拐角时
+     不用垫。入口 30/24 且准入口后面接的是普通二分时，那个二分和它上面那个汇流器
+     之间留两格。 */
+  const firstPlainTwo = (!leadDouble && stages[0][0] === "n" && stages[0][1] === 2);
+  const stageBufs = [];
+  let prevIsSplitter = false, blockSeen = false;
+  rest.forEach(([kind]) => {
+    if(kind !== "P"){ stageBufs.push(0); }
+    else{
+      let b = prevIsSplitter ? 1 : 0;
+      if(b && !blockSeen && firstPlainTwo && (info.rate === 24 || info.rate === 30)) b = 2;
+      blockSeen = true;
+      stageBufs.push(b);
+    }
+    prevIsSplitter = true;
+  });
+  let restRows = 0;
+  rest.forEach(([k, v], i) => {
+    restRows += (k === "n") ? 1 : blockHeight(v, leadDouble, stageBufs[i]);
+  });
+  const leadRows = leadDouble ? blockHeight(lead[1], false, 0) + 3 : 0;  /* 二分 + 两份 + 合流 */
+  const chainRows = leadRows + restRows + 1;                   /* +1 给取货口上的物品准入口 */
+  const chainTop = 2;
+  const chainBottom = chainTop + chainRows - 1;
+  const portRow = chainBottom + 1;
+
+  const wide = leadDouble && needsInner(lead[1]);
+  const ga = wide ? GEO_A2 : GEO_A, gb = wide ? GEO_B2 : GEO_B;
+  const mid = wide ? CENTER2 : CENTER;
+  /* 两侧返货通道尽量贴着副本：2 / 10 列空着（只有更深的嵌套才会用到），
+     这样横带最短只剩一格 */
+  const laneLAct = wide ? GEO_A2.dumpL : 2;
+  const laneRAct = wide ? GEO_B2.dumpR : 10;
+  const bp = new Blueprint(leadDouble ? (wide ? COLS_DOUBLE2 : COLS_DOUBLE) : COLS_SINGLE);
+  const geo = leadDouble
+    ? new Geo(mid, [mid - 1, mid + 1, mid - 2, mid + 2],
+              [mid - 2, mid - 3], [mid + 2, mid + 3], laneLAct, laneRAct)
+    : GEO_SINGLE;
+
+  let mergeRowD = null, splitRowD = null;
+  let r = chainBottom - 1;                 /* 最下面一行留给物品准入口 */
+  if(leadDouble){
+    /* 组合接法：底部二分 -> 两份并行块 -> 合流汇流器，合流行在副本块顶上 */
+    const d = placeDoubleBlocks(bp, chainBottom - 2, lead[1], ga, gb, 0);
+    mergeRowD = d.mergeRow; splitRowD = d.splitRow;
+    r = mergeRowD - 1;
+  }
+
+  rest.forEach(([kind, value], i) => {
+    if(kind === "n"){
+      bp.device(geo.chain, r, "splitter", 0, value + " 分");
+      emitDump(bp, geo, r, DIR_W);
+      if(value >= 3) emitDump(bp, geo, r, DIR_E);
+      r -= 1;
+    }else{
+      /* 组合接法下游的质数块：因子逐级包一层“改”结构，把回路层数推成偶数 */
+      const res = placeBlock(bp, r, value, geo, 0, false, leadDouble, stageBufs[i]);
+      r = res.row;
+    }
+  });
+
+  /* ---- 分支：多余出口 + 三分补口 -> 两侧返货通道 ---- */
+  const joins = new Map();
+  drawDumps(bp, joins);
+  const channels = new Set([geo.dumpL, geo.dumpR].filter(l => l != null));
+  if(leadDouble){
+    [ga.dumpL, ga.dumpR, gb.dumpL, gb.dumpR].forEach(l => {
+      if(l != null) channels.add(l);
+    });
+  }
+  fixThreePorts(bp, channels, joins);
+  buildLanes(bp, joins, portRow, geo);
+  const laneL = (geo.dumpL != null) ? geo.dumpL : 1;
+  const laneR = (geo.dumpR != null) ? geo.dumpR : (bp.cols - 2);
+  if(leadDouble){                        /* 通道铺好后再铺中间的二分/合流 */
+    placeDoubleJoin(bp, mergeRowD, splitRowD, mid, ga, gb);
+    rng(2, mergeRowD).forEach(rr => {
+      if(!bp.cells[ck(mid, rr)]) bp.belt(mid, rr, DIR_N);
+    });
+  }
+
+  /* ---- 物品准入口：直接摆在取货口输出口上（不用传送带中转） ---- */
+  const gateCol = leadDouble ? mid : GEO_SINGLE.chain;
+  const gateFile = gateTile(info);
+  if(gateFile){
+    const b = BATTERIES.find(x => Math.abs(x.power - (info.battery || 0)) < 1e-6);
+    bp.put(gateCol, portRow - 1, gateFile,
+           "物品准入口 " + (b ? b.name : "") + " " + info.rate + "/分");
+  }
+
+  /* ---- 端口：两边存货口、中间取货口 ---- */
+  if(leadDouble){
+    if(joins.has(laneL)) bp.put(laneL - 1, portRow, "build_deposit.png", "仓库存货口", 3);
+    bp.put(mid - 1, portRow, "build_pickup.png", "仓库取货口", 3);
+    if(joins.has(laneR)) bp.put(laneR - 1, portRow, "build_deposit.png", "仓库存货口", 3);
+    /* 取货口 -> 中间列 -> 二分（从二分行下方一路补到端口行） */
+    rng(splitRowD + 1, portRow).forEach(rr => {
+      if(!bp.cells[ck(mid, rr)]) bp.belt(mid, rr, DIR_N);
+    });
+  }else{
+    if(joins.has(laneL)) bp.put(laneL - 1, portRow, "build_deposit.png", "仓库存货口", 3);
+    bp.put(GEO_SINGLE.chain - 1, portRow, "build_pickup.png", "仓库取货口", 3);
+    if(joins.has(laneR)) bp.put(laneR - 1, portRow, "build_deposit.png", "仓库存货口", 3);
+  }
+
+  /* ---- 压紧：主链第一格紧贴热能池，不留空带 ---- */
+  compact(bp, chainTop);
+  putThermal(bp, geo);
+
+  /* ---- 三分"keep"的那个口必须接上（二分留空是故意的，别补） ---- */
+  Object.values(bp.cells).sort((a, b) => (a.row - b.row) || (a.col - b.col))
+    .forEach(cell => {
+      const lab = cell.label || "";
+      if(cell.file.indexOf("splitter") < 0 || lab.indexOf("3 ") !== 0) return;
+      if(cell.row > 0 && !occupied(bp, cell.col, cell.row - 1)){
+        bp.belt(cell.col, cell.row - 1, DIR_N);
+      }
+    });
+
+  /* 收尾自检：回流汇流器左右都没接东西时，说明这一级回流没找到来源 */
+  Object.keys(bp.cells).forEach(k => {
+    const cell = bp.cells[k];
+    const lab = cell.label || "";
+    if(cell.file.indexOf("build_merger") !== 0 || lab.indexOf("回流") < 0) return;
+    if(bp.cells[ck(cell.col - 1, cell.row)] || bp.cells[ck(cell.col + 1, cell.row)]) return;
+    bp.warnings.push(lab + " 这一级回流没有找到可用来源，图上按并列汇流摆放，比例请对照参考图确认");
+  });
+  trimColumns(bp);
+  return bp;
+}
+
+function bpHTML(bp, avail, zoom){
+  /* 先按“适应宽度”算基准格，再乘缩放倍数；上下限放得很宽，方便放大看细节 */
+  const z = (zoom && zoom > 0) ? zoom : 1;
+  let cell = Math.floor((avail || 420) / bp.cols);
+  cell = Math.max(20, Math.min(64, cell));
+  cell = Math.max(9, Math.min(190, Math.round(cell * z)));
+  const width = cell * bp.cols, height = cell * bp.rows;
+  const fs = Math.max(8, Math.min(30, Math.round(cell * 0.19)));
+  const parts = [`<div class="bp" style="width:${width}px;height:${height}px;`,
+                 `background-size:${cell}px ${cell}px">`];
+  Object.values(bp.cells).forEach(c => {
+    const src = IMAGES[c.file];
+    if(!src) return;
+    const w = cell * c.span, h = cell * c.spanRows;
+    parts.push(`<i style="left:${c.col * cell}px;top:${c.row * cell}px;width:${w}px;height:${h}px;`,
+               `background-image:url(${src})"></i>`);
+    if(c.label){
+      parts.push(`<span class="bplab" style="left:${c.col * cell + w / 2}px;`,
+                 `top:${c.row * cell + h - 1}px;font-size:${fs}px">${esc(c.label)}</span>`);
+    }
+  });
+  parts.push("</div>");
+  return parts.join("");
+}
+
+/* ===================== 界面 ===================== */
+const $ = (id) => document.getElementById(id);
+const state = {theme:"huanghui", battery:1, rate:6, mode:"normal", view:"result",
+               info:null, bpZoom:1, viewerZoom:1};
+
+const resultEl = $("result");
+
+function esc(s){
+  return String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+}
+function renderResult(lines){
+  resultEl.innerHTML = lines.map(([t, tag]) => `<div class="ln ${tag}">${esc(t)}</div>`).join("");
+  resultEl.scrollTop = 0;
+}
+function showPlaceholder(){
+  renderResult([["在左侧填写参数后，点击「开始计算」", "placeholder"]]);
+  state.info = null;
+  renderBuild(null);
+}
+
+/* ---- 输出视图切换（两块常显，点分段只是把对应那块滚进视野） ---- */
+function setOutputView(key, scroll){
+  state.view = (key === "build") ? "build" : "result";
+  document.querySelectorAll("#outputSeg button").forEach(b => {
+    b.classList.toggle("on", b.dataset.view === state.view);
+  });
+  if(state.view === "build") renderBuild(state.info);
+  const pane = (state.view === "build") ? $("buildView") : $("resultView");
+  if(scroll !== false && pane && pane.scrollIntoView){
+    try{ pane.scrollIntoView({block:"nearest", behavior:"smooth"}); }catch(e){}
+  }
+}
+
+function tileImg(file, cls){
+  const src = IMAGES[file];
+  if(!src) return "";
+  return `<img class="${cls}" src="${src}" alt="">`;
+}
+
+function shapeClass(shape, big){
+  if(shape === "wide") return big ? "wide" : "wide";
+  if(shape === "sm") return "sm";
+  return "sq";
+}
+
+function renderBuild(info){
+  const el = $("build");
+  if(!info){
+    el.innerHTML = `<div class="bempty">先在左侧填写参数并计算，<br>这里会给出对应的游戏内搭建方法。</div>`;
+    return;
+  }
+  const rate = info.rate, model = info.model, interval = info.interval;
+  const parts = [];
+  const step = (file, shape, title, desc) => parts.push(
+    `<div class="bstep">${tileImg(file, shapeClass(shape, true))}`
+    + `<span class="col"><span class="n">${esc(title)}</span>`
+    + (desc ? `<span class="d">${esc(desc)}</span>` : "") + `</span></div>`);
+  const arrow = (text) => parts.push(
+    `<div class="barrow"><span class="a">↓</span>${tileImg("build_belt.png", "sm")}`
+    + `<span>${esc(text || "传送带")}</span></div>`);
+
+  // 摘要
+  let summary, factorLine;
+  if(info.mode === "simple"){
+    const p = [];
+    if(info.pow2) p.push(`${info.pow2} 个二分`);
+    if(info.pow3) p.push(`${info.pow3} 个三分`);
+    summary = p.length ? "串联 " + p.join(" + ") : "无需分流";
+    factorLine = `总速率 ×1/${info.result}`;
+  }else{
+    const ks = Object.keys(info.factors).map(Number).sort((a,b) => a - b);
+    summary = "串联 " + ks.map(k => `${info.factors[k]} 个 ${k} 分`).join(" + ");
+    factorLine = "总速率 ×1/" + ks.reduce((acc,k) => acc * Math.pow(k, info.factors[k]), 1);
+  }
+  parts.push(`<div class="bcard"><div class="t">${esc(summary)}</div>`
+    + `<div class="s">${esc(factorLine)}　·　目标间隔 ${interval} 秒</div></div>`);
+
+  // 网格蓝图
+  const bp = buildBlueprint(info);
+  parts.push(`<div class="bsect">网格蓝图</div>`);
+  if(!bp){
+    parts.push(`<div class="bnote"><span class="dot">·</span>`
+             + `<span>当前参数不需要分流，直接把取货口接进热能池即可。</span></div>`);
+  }else{
+    const avail = Math.max(260, ($("build").clientWidth || 520) - 8);
+    parts.push(`<div class="bpcap"><span class="bpcaptxt">`
+      + `<span>${bp.cols} 列 × ${bp.rows} 行 · 箭头就是电池流向</span>`
+      + `<button class="bpzoom" type="button" data-open-viewer>放大查看 ↗</button>`
+      + `</span><span class="bpctl">`
+      + `<button class="zbtn" type="button" data-zoom="out" title="缩小">−</button>`
+      + `<span class="zval">${Math.round(state.bpZoom * 100)}%</span>`
+      + `<button class="zbtn" type="button" data-zoom="in" title="放大">＋</button>`
+      + `<button class="zbtn res" type="button" data-zoom="fit" title="回到适应宽度">适应</button>`
+      + `</span></div>`);
+    parts.push(`<div class="bpwrap">` + bpHTML(bp, avail, state.bpZoom) + `</div>`);
+    parts.push(`<div class="bnote"><span class="dot">·</span><span>输入 ${rate} 个/分钟`
+      + `（每 ${fmtNum(model)} 秒 1 个）　·　热能池每 `
+      + `${fmtNum(info.actualInterval || interval)} 秒进 1 个`
+      + `　·　Ctrl+滚轮也能缩放</span></div>`);
+  }
+
+  el.innerHTML = parts.join("");
+  el.scrollTop = 0;
+
+  /* 缩放按钮 + Ctrl/⌘ + 滚轮 */
+  el.querySelectorAll("[data-zoom]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const k = btn.dataset.zoom;
+      if(k === "fit") setBpZoom(1);
+      else setBpZoom(state.bpZoom * (k === "in" ? 1.25 : 0.8));
+    });
+  });
+  el.querySelectorAll("[data-open-viewer]").forEach(btn => {
+    btn.addEventListener("click", openBpViewer);
+  });
+  const wrap = el.querySelector(".bpwrap");
+  if(wrap){
+    wrap.addEventListener("wheel", (e) => {
+      if(!(e.ctrlKey || e.metaKey)) return;      /* 普通滚轮留给滚动 */
+      e.preventDefault();
+      setBpZoom(state.bpZoom * (e.deltaY < 0 ? 1.12 : 1 / 1.12));
+    }, {passive:false});
+  }
+}
+
+/* 缩放：改倍数后重画搭建演示，尽量保持滚动位置 */
+function setBpZoom(next){
+  const z = Math.max(0.5, Math.min(3, next));
+  if(Math.abs(z - state.bpZoom) < 1e-6) return;
+  state.bpZoom = z;
+  const el = $("build");
+  const keep = el.scrollTop;
+  renderBuild(state.info);
+  el.scrollTop = keep;
+}
+
+/* ---- 放大查看：独立浮层，按应用里一格 58px 的大图显示 ---- */
+const VIEWER_CELL = 58;
+let viewerBp = null, viewerReturnFocus = null;
+
+function openBpViewer(){
+  if(!state.info) return;
+  const bp = buildBlueprint(state.info);
+  if(!bp) return;
+  viewerBp = bp;
+  state.viewerZoom = 1;
+  viewerReturnFocus = document.activeElement;
+  renderBpViewer();
+  $("bpViewer").hidden = false;
+  document.documentElement.classList.add("viewer-open");
+  /* 锁滚动会让滚动条消失，补上这段宽度，避免页面左右跳一下 */
+  const gap = Math.max(0, window.innerWidth - document.documentElement.clientWidth);
+  if(gap > 0) document.body.style.paddingRight = gap + "px";
+  const close = $("bpViewerClose");
+  if(close) close.focus();
+}
+function closeBpViewer(){
+  const box = $("bpViewer");
+  if(!box || box.hidden) return;
+  box.hidden = true;
+  document.documentElement.classList.remove("viewer-open");
+  document.body.style.paddingRight = "";
+  if(viewerReturnFocus && viewerReturnFocus.focus){
+    try{ viewerReturnFocus.focus(); }catch(e){}
+  }
+  viewerReturnFocus = null;
+}
+function renderBpViewer(){
+  if(!viewerBp || !state.info) return;
+  const body = $("bpViewerBody"), wrap = $("bpViewerWrap");
+  const oldW = wrap.scrollWidth || 1, oldH = wrap.scrollHeight || 1;
+  const first = oldW <= 1 || oldH <= 1;
+  const cx = first ? 0.5 : (body.scrollLeft + body.clientWidth / 2) / oldW;
+  const cy = first ? 0.5 : (body.scrollTop + body.clientHeight / 2) / oldH;
+  wrap.innerHTML = bpHTML(viewerBp, VIEWER_CELL * viewerBp.cols, state.viewerZoom);
+  $("bpViewerZoom").textContent = Math.round(state.viewerZoom * 100) + "%";
+  const info = state.info;
+  $("bpViewerFoot").textContent =
+    `${viewerBp.cols} 列 × ${viewerBp.rows} 行　·　速率 ${info.rate} 个/分钟`
+    + `　·　目标间隔 ${info.interval} 秒`;
+  requestAnimationFrame(() => {
+    body.scrollLeft = Math.max(0, cx * wrap.scrollWidth - body.clientWidth / 2);
+    body.scrollTop = Math.max(0, cy * wrap.scrollHeight - body.clientHeight / 2);
+  });
+}
+function setViewerZoom(next){
+  const z = Math.max(0.3, Math.min(3, next));
+  if(Math.abs(z - state.viewerZoom) < 1e-6) return;
+  state.viewerZoom = z;
+  renderBpViewer();
+}
+function fitViewerZoom(){
+  if(!viewerBp) return;
+  const body = $("bpViewerBody");
+  const avail = Math.max(200, body.clientWidth - 28);
+  setViewerZoom(avail / (VIEWER_CELL * viewerBp.cols));
+}
+
+/* ---- 主题 ---- */
+function setTheme(key, remember){
+  if(!THEMES[key]) key = "huanghui";
+  state.theme = key;
+  document.documentElement.dataset.theme = key;
+  $("themeName").textContent = THEMES[key].name;
+  $("sw1").style.background = THEMES[key].sw[0];
+  $("sw2").style.background = THEMES[key].sw[1];
+  $("metaTheme").setAttribute("content", THEMES[key].meta);
+  document.querySelectorAll("#themeList .row").forEach(r => {
+    const on = r.dataset.theme === key;
+    r.classList.toggle("sel", on);
+    r.querySelector(".check").textContent = on ? "✓" : "";
+  });
+}
+function buildThemeList(){
+  const list = $("themeList");
+  list.innerHTML = Object.entries(THEMES).map(([key, t]) => `
+    <button class="row" type="button" role="option" data-theme="${key}">
+      <span class="swatch"><i style="background:${t.sw[0]}"></i><i style="background:${t.sw[1]}"></i></span>
+      <span class="col"><span class="lbl">${t.name}</span></span>
+      <span class="check"></span>
+    </button>`).join("");
+  list.querySelectorAll(".row").forEach(r => {
+    r.addEventListener("click", () => { setTheme(r.dataset.theme); closeDropdowns(); });
+  });
+}
+
+/* ---- 电池 ---- */
+function selectBattery(i, doCalc){
+  state.battery = Math.max(0, Math.min(BATTERIES.length - 1, i));
+  const b = BATTERIES[state.battery];
+  $("battThumb").src = IMAGES[b.file];
+  $("battName").textContent = b.name;
+  $("battPower").textContent = `每秒发电 ${b.power} 单位`;
+  document.querySelectorAll("#battList .row").forEach(r => {
+    const on = Number(r.dataset.idx) === state.battery;
+    r.classList.toggle("sel", on);
+    r.querySelector(".check").textContent = on ? "✓" : "";
+  });
+  if(doCalc && parsePower() !== null) doCalculate();
+}
+function buildBatteryList(){
+  const list = $("battList");
+  list.innerHTML = BATTERIES.map((b, i) => `
+    <button class="row" type="button" role="option" data-idx="${i}">
+      <img src="${IMAGES[b.file]}" alt="">
+      <span class="col"><span class="lbl">${b.name}</span>
+      <span class="sub">每秒发电 ${b.power} 单位</span></span>
+      <span class="check"></span>
+    </button>`).join("");
+  list.querySelectorAll(".row").forEach(r => {
+    r.addEventListener("click", () => { selectBattery(Number(r.dataset.idx)); closeDropdowns(); });
+  });
+}
+
+/* ---- 速率 ---- */
+function updateRate(){
+  const v = Number($("rate").value);
+  state.rate = v;
+  const pct = (v - 6) / 24 * 100;
+  $("rate").style.setProperty("--fill", pct + "%");
+  $("rateLabel").textContent = `${v} 个/分钟 · 每 ${fmtNum(60 / v)} 秒 1 个`;
+  document.querySelectorAll("#ticks span").forEach(s => {
+    s.classList.toggle("on", Number(s.textContent) === v);
+  });
+}
+
+/* ---- 模式 ---- */
+function setMode(mode){
+  state.mode = (mode === "precise") ? "precise" : "normal";
+  document.querySelectorAll("#modeSeg button").forEach(b => {
+    b.classList.toggle("on", b.dataset.mode === state.mode);
+  });
+  $("modeHint").textContent = state.mode === "precise"
+    ? "精确模式：对比例做质因数分解，给出可精确复现的配方。"
+    : "简单模式：用 2 分与 3 分电池的组合逼近理论比例。";
+}
+
+/* ---- 下拉框 ---- */
+function closeDropdowns(except){
+  document.querySelectorAll(".dropdown.open").forEach(d => {
+    if(d !== except) d.classList.remove("open");
+  });
+}
+function setupDropdown(wrapId, btnId){
+  const wrap = $(wrapId);
+  $(btnId).addEventListener("click", (e) => {
+    e.stopPropagation();
+    const willOpen = !wrap.classList.contains("open");
+    closeDropdowns();
+    wrap.classList.toggle("open", willOpen);
+  });
+}
+document.addEventListener("click", (e) => {
+  if(!e.target.closest(".dropdown")) closeDropdowns();
+});
+document.addEventListener("keydown", (e) => {
+  if(e.key === "Escape") closeDropdowns();
+});
+
+/* ---- 计算 ---- */
+function parsePower(){
+  const raw = $("power").value.trim();
+  if(raw === "") return null;
+  const v = Number(raw);
+  if(!isFinite(v) || v <= 0) return null;
+  if(!Number.isInteger(v)) return null;
+  /* 游戏内每台设备耗电量都是 5 的整数倍，总耗电必然也是 5 的倍数：
+     不是就向下取到最近的 5 的倍数 */
+  if(v % 5 !== 0){
+    const snapped = v - (v % 5);
+    return snapped > 0 ? snapped : null;
+  }
+  return v;
+}
+function doCalculate(){
+  const raw = $("power").value.trim();
+  if(raw === ""){ showError("请填写「系统总耗电」。"); $("power").focus(); return; }
+  const power = parsePower();
+  if(power === null){
+    showError("「系统总耗电」需要是大于 0 的整数，例如 1500。");
+    $("power").focus(); return;
+  }
+  /* 对齐到 5 的倍数后回填输入框，避免显示与实际不一致 */
+  if(Number(raw) !== power) $("power").value = String(power);
+  const b = BATTERIES[state.battery];
+  const result = calculate(power, b.power, state.rate, state.mode === "precise");
+  const lines = result.lines;
+  state.info = result.info;
+  lines.unshift([`${b.name} · 每秒发电 ${b.power} 单位`, "muted"]);
+  renderResult(lines);
+  renderBuild(state.info);
+}
+function showError(msg){
+  state.info = null;
+  renderResult([[msg, "error"]]);
+  renderBuild(null);
+}
+function doClear(){
+  $("power").value = "";
+  selectBattery(0, false);
+  $("rate").value = 6;
+  updateRate();
+  setMode("normal");
+  showPlaceholder();
+  $("power").focus();
+}
+
+/* ---- 上下分栏：拖动调整“计算结果”的高度，剩下的给搭建演示 ---- */
+const SPLIT_KEY = "endfield.splitTopH";
+function initSplit(){
+  const split = $("split"), grip = $("grip"), top = $("resultView");
+  if(!split || !grip || !top) return;
+
+  /* 上下留白：初始时给下面至少 150px；拖动时最少保留 80px，
+     这样第一次往下拖也有足够的行程，手柄不会“粘”住不动 */
+  const MIN_TOP = 96, DEFAULT_BOTTOM = 150, MIN_BOTTOM = 80;
+  const gripH = () => grip.getBoundingClientRect().height + 6;  /* 手柄 + 上下 margin */
+  const maxH = (splitH) => Math.max(MIN_TOP, (splitH || split.clientHeight) - gripH() - MIN_BOTTOM);
+  const clampH = (h, splitH) => Math.max(MIN_TOP, Math.min(maxH(splitH), h));
+  const setH = (h, splitH) => { top.style.height = clampH(h, splitH) + "px"; };
+  const defaultH = () => Math.min(
+    top.getBoundingClientRect().height || 320,
+    split.clientHeight - gripH() - DEFAULT_BOTTOM);
+
+  const saved = parseFloat(localStorage.getItem(SPLIT_KEY) || "");
+  if(isFinite(saved) && saved > 0) setH(saved);
+  else setH(defaultH());
+
+  /* ---- 拖动：Pointer Events + 指针捕获，移动多少手柄就走多少 ---- */
+  let drag = null, raf = 0, pendingY = 0;
+
+  const applyDrag = () => {
+    raf = 0;
+    if(!drag) return;
+    setH(drag.h + (pendingY - drag.y), drag.splitH);
+  };
+  const onDown = (e) => {
+    if(e.pointerType === "mouse" && e.button !== 0) return;
+    drag = {id: e.pointerId, y: e.clientY,
+            h: top.getBoundingClientRect().height, splitH: split.clientHeight};
+    pendingY = e.clientY;
+    grip.classList.add("on");
+    document.documentElement.classList.add("grip-drag");
+    try{ grip.setPointerCapture(e.pointerId); }catch(err){}
+    e.preventDefault();
+  };
+  const onMove = (e) => {
+    if(!drag || e.pointerId !== drag.id) return;
+    pendingY = e.clientY;
+    if(!raf) raf = requestAnimationFrame(applyDrag);
+    e.preventDefault();
+  };
+  const onUp = (e) => {
+    if(!drag || (e && e.pointerId !== drag.id)) return;
+    const commit = !e || e.type === "pointerup";
+    if(commit && typeof e.clientY === "number") pendingY = e.clientY;
+    if(raf){ cancelAnimationFrame(raf); raf = 0; }
+    if(commit) applyDrag();
+    drag = null;
+    grip.classList.remove("on");
+    document.documentElement.classList.remove("grip-drag");
+    try{ localStorage.setItem(SPLIT_KEY, String(Math.round(top.getBoundingClientRect().height))); }catch(err){}
+  };
+
+  grip.addEventListener("pointerdown", onDown);
+  grip.addEventListener("pointermove", onMove);
+  grip.addEventListener("pointerup", onUp);
+  grip.addEventListener("pointercancel", onUp);
+
+  /* 双击复位成默认高度 */
+  grip.addEventListener("dblclick", () => {
+    top.style.height = "";
+    setH(defaultH());
+    try{ localStorage.removeItem(SPLIT_KEY); }catch(err){}
+  });
+
+  /* 窗口尺寸变化后，别让结果框把下面挤没 */
+  let resizeTimer = 0;
+  window.addEventListener("resize", () => {
+    if(drag) return;
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => setH(top.getBoundingClientRect().height), 150);
+  });
+}
+
+/* ===================== 启动 ===================== */
+buildThemeList();
+buildBatteryList();
+setTheme("huanghui");
+selectBattery(1, false);
+setMode("normal");
+updateRate();
+showPlaceholder();
+
+$("calcBtn").addEventListener("click", doCalculate);
+$("clearBtn").addEventListener("click", doClear);
+$("rate").addEventListener("input", updateRate);
+$("power").addEventListener("keydown", (e) => { if(e.key === "Enter") doCalculate(); });
+document.querySelectorAll("#modeSeg button").forEach(b => {
+  b.addEventListener("click", () => setMode(b.dataset.mode));
+});
+document.querySelectorAll("#outputSeg button").forEach(b => {
+  b.addEventListener("click", () => setOutputView(b.dataset.view));
+});
+setOutputView("result", false);
+initSplit();
+setupDropdown("themeSel", "themeBtn");
+setupDropdown("battSel", "battBtn");
+
+/* 放大查看浮层 */
+$("bpViewerClose").addEventListener("click", closeBpViewer);
+$("bpViewer").addEventListener("click", (e) => {
+  if(e.target === $("bpViewer")){ closeBpViewer(); return; }
+  const btn = e.target.closest("[data-vzoom]");
+  if(!btn) return;
+  const k = btn.dataset.vzoom;
+  if(k === "fit") fitViewerZoom();
+  else setViewerZoom(state.viewerZoom * (k === "in" ? 1.25 : 0.8));
+});
+$("bpViewerBody").addEventListener("wheel", (e) => {
+  if(!(e.ctrlKey || e.metaKey)) return;      /* 普通滚轮留给滚动 */
+  e.preventDefault();
+  setViewerZoom(state.viewerZoom * (e.deltaY < 0 ? 1.12 : 1 / 1.12));
+}, {passive:false});
+document.addEventListener("keydown", (e) => {
+  if(e.key === "Escape" && !$("bpViewer").hidden){
+    e.stopPropagation();
+    closeBpViewer();
+  }
+});
+
+/* PWA：内联 manifest，托管时可“添加到主屏幕” */
+try{
+  const manifest = {
+    name:"终末地 · 电池配比计算器", short_name:"电池配比", start_url:".", display:"standalone",
+    background_color:THEMES.huanghui.meta, theme_color:THEMES.huanghui.meta,
+    icons:[
+      {src:IMAGES["logo.png"], sizes:"512x512", type:"image/png", purpose:"any"},
+      {src:IMAGES["logo.png"], sizes:"512x512", type:"image/png", purpose:"maskable"}
+    ]
+  };
+  const url = URL.createObjectURL(new Blob([JSON.stringify(manifest)], {type:"application/manifest+json"}));
+  $("manifestLink").href = url;
+}catch(e){ /* file:// 下部分浏览器不支持，忽略 */ }
+
+/* 支持用 URL 参数预置状态（也方便分享/截图验证） */
+(function applyParams(){
+  const q = new URLSearchParams(location.search);
+  if(q.has("theme")) setTheme(q.get("theme"));
+  if(q.has("battery")) selectBattery(Number(q.get("battery")), false);
+  if(q.has("rate")){ $("rate").value = q.get("rate"); updateRate(); }
+  if(q.has("mode")) setMode(q.get("mode"));
+  if(q.has("power")) $("power").value = q.get("power");
+  if(q.get("calc") === "1") doCalculate();
+  if(q.has("view")) setOutputView(q.get("view"));
+})();
+</script>
+</body>
+</html>

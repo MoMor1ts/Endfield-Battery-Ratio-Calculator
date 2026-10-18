@@ -1,0 +1,10 @@
+# build_exe.bat 是 GBK + CRLF 的批处理，别让 git 把它改行尾或转码
+*.bat -text
+* text=auto
+
+# 图片按二进制处理
+*.png binary
+*.ico binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
