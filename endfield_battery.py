@@ -689,6 +689,7 @@ def calculate(total_power: float, battery_output: float, rate_per_min: int, prec
 
     if precise_mode:
         ratio = max(int(ratio_target), 1)
+        build_interval = interval          # 搭建演示里显示的目标间隔
 
         def _ok(n):
             """是否可接受：只看质数分解层数（层数过多时实际意义较小）"""
@@ -702,13 +703,15 @@ def calculate(total_power: float, battery_output: float, rate_per_min: int, prec
                 lines.append((
                     f"比例 {original} 的质数分解层数过多、实际意义较小；"
                     f"已改用接近的 {ratio}（{_factor_text(ratio)}）代替。", "warn"))
+                # 比例下调后，搭建演示的目标间隔也跟着改成下调后的时间
+                build_interval = ratio * model
         lines.append(("因子分解", "section"))
         lines.extend(format_output_lines(ratio))
         lines.append((f"一小时理论消耗 {total + 1} 个电池", "accent"))
         factors, rules = decompose_target(ratio)
         info = {
             "mode": "precise", "number": number, "rate": rate_per_min, "model": model,
-            "battery": battery_output, "interval": interval, "time_sec": time_sec,
+            "battery": battery_output, "interval": build_interval, "time_sec": time_sec,
             "deadline": deadline, "ratio": ratio,
             "factors": dict(sorted(factors.items())),
             "rules": {p: dict(sorted(c.items())) for p, c in sorted(rules.items())},
@@ -2270,7 +2273,7 @@ class BatteryApp(tk.Tk):
         info = self._last_info
         tk.Label(win, text=f"{bp.cols} 列 × {bp.rows} 行　·　"
                            f"速率 {info['rate']} 个/分钟　·　"
-                           f"目标间隔 {info['interval']} 秒",
+                           f"目标间隔 {fmt_num(info['interval'])} 秒",
                  bg=BP_WIN, fg=MUTED, font=self.f_small).pack(
                      side="bottom", pady=self.px(6))
 
@@ -2634,7 +2637,7 @@ class BatteryApp(tk.Tk):
         head.pack(fill="x", padx=self.px(14), pady=self.px(10))
         tk.Label(head, text=summary, bg=INPUT_BG, fg=ACCENT, font=self.f_label,
                  anchor="w", justify="left", wraplength=self.px(380)).pack(fill="x")
-        tk.Label(head, text=f"{factor_line}　·　目标间隔 {interval} 秒",
+        tk.Label(head, text=f"{factor_line}　·　目标间隔 {fmt_num(interval)} 秒",
                  bg=INPUT_BG, fg=MUTED, font=self.f_small, anchor="w",
                  justify="left", wraplength=self.px(380)).pack(fill="x")
 

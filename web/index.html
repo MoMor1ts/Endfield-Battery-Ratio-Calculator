@@ -597,13 +597,14 @@ function factorDepth(p){
 }
 function ratioDepth(n){
   if(n <= 1) return 1;
-  return Math.max.apply(null, Object.keys(primeFactorization(n)).map(k => factorDepth(Number(k))));
+  const primes = [...primeFactorization(n).keys()];
+  return Math.max.apply(null, primes.map(k => factorDepth(k)));
 }
 const MAX_DEPTH = 2;
 
 function factorText(n){
   const m = primeFactorization(n);
-  return Object.keys(m).map(Number).sort((a,b)=>a-b)
+  return [...m.keys()].sort((a,b)=>a-b)
     .map(p => m.get(p) === 1 ? String(p) : p + "^" + m.get(p)).join(" × ");
 }
 
@@ -658,12 +659,15 @@ function calculate(totalPower, batteryOutput, ratePerMin, preciseMode){
 
   if(preciseMode){
     let ratio = Math.max(Math.trunc(ratioTarget), 1);
+    let buildInterval = interval;      /* 搭建演示里显示的目标间隔 */
     if(!ratioBuildable(ratio, ratePerMin, batteryOutput, interval)){
       const original = ratio;
       while(ratio > 2 && !ratioBuildable(ratio, ratePerMin, batteryOutput, interval)) ratio--;
       if(ratio !== original){
         lines.push([`比例 ${original} 的质数分解层数过多、实际意义较小；`
           + `已改用接近的 ${ratio}（${factorText(ratio)}）代替。`, "warn"]);
+        /* 比例下调后，搭建演示的目标间隔也跟着改成下调后的时间 */
+        buildInterval = ratio * model;
       }
     }
     lines.push(["因子分解", "section"]);
@@ -672,7 +676,7 @@ function calculate(totalPower, batteryOutput, ratePerMin, preciseMode){
     const dec = decomposeTarget(ratio);
     return {lines, info:{
       mode:"precise", number, rate:ratePerMin, model, battery:batteryOutput,
-      interval, timeSec, deadline, ratio,
+      interval: buildInterval, timeSec, deadline, ratio,
       factors:dec.factors, rules:dec.rules, hour:total + 1
     }};
   }
@@ -1421,7 +1425,7 @@ function renderBuild(info){
     factorLine = "总速率 ×1/" + ks.reduce((acc,k) => acc * Math.pow(k, info.factors[k]), 1);
   }
   parts.push(`<div class="bcard"><div class="t">${esc(summary)}</div>`
-    + `<div class="s">${esc(factorLine)}　·　目标间隔 ${interval} 秒</div></div>`);
+    + `<div class="s">${esc(factorLine)}　·　目标间隔 ${fmtNum(interval)} 秒</div></div>`);
 
   // 网格蓝图
   const bp = buildBlueprint(info);
@@ -1444,7 +1448,7 @@ function renderBuild(info){
     parts.push(`<div class="bnote"><span class="dot">·</span><span>输入 ${rate} 个/分钟`
       + `（每 ${fmtNum(model)} 秒 1 个）　·　热能池每 `
       + `${fmtNum(info.actualInterval || interval)} 秒进 1 个`
-      + `　·　Ctrl+滚轮也能缩放</span></div>`);
+      + `</span></div>`);
   }
 
   el.innerHTML = parts.join("");
@@ -1525,7 +1529,7 @@ function renderBpViewer(){
   const info = state.info;
   $("bpViewerFoot").textContent =
     `${viewerBp.cols} 列 × ${viewerBp.rows} 行　·　速率 ${info.rate} 个/分钟`
-    + `　·　目标间隔 ${info.interval} 秒`;
+    + `　·　目标间隔 ${fmtNum(info.interval)} 秒`;
   requestAnimationFrame(() => {
     body.scrollLeft = Math.max(0, cx * wrap.scrollWidth - body.clientWidth / 2);
     body.scrollTop = Math.max(0, cy * wrap.scrollHeight - body.clientHeight / 2);
@@ -1783,7 +1787,17 @@ showPlaceholder();
 $("calcBtn").addEventListener("click", doCalculate);
 $("clearBtn").addEventListener("click", doClear);
 $("rate").addEventListener("input", updateRate);
-$("power").addEventListener("keydown", (e) => { if(e.key === "Enter") doCalculate(); });
+/* 全局 Enter 计算：焦点在输入框、滑轨或页面上时都能用 */
+document.addEventListener("keydown", (e) => {
+  if(e.repeat) return;
+  if(e.key !== "Enter" && e.keyCode !== 13) return;
+  if(e.isComposing || e.keyCode === 229) return;
+  if(!$("bpViewer").hidden) return;                 /* 放大查看时不触发计算 */
+  const t = e.target;
+  if(t && t.closest && t.closest("button,a,textarea,[contenteditable='true']")) return;
+  e.preventDefault();
+  doCalculate();
+});
 document.querySelectorAll("#modeSeg button").forEach(b => {
   b.addEventListener("click", () => setMode(b.dataset.mode));
 });
