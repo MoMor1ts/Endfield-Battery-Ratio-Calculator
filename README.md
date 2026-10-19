@@ -113,8 +113,10 @@ web/README.md            网页版单独说明
 
 ## 授权与免责
 
-- **代码**：MIT，见 `LICENSE`。
-- **图片素材**：`resource/` 里的电池图标、元件图、logo 以及 `web/index.html` 内嵌的同批图片，
-  均来自游戏《明日方舟：终末地》，版权归原权利方（鹰角网络 / Hypergryph）所有，**不在 MIT 授权范围内**。
+- **代码与图标**：MIT，见 `LICENSE`。图标指 `resource/logo.png`、`resource/logo.ico`，
+  它不是游戏资源。
+- **游戏素材**：`resource/` 里的电池图标（`gudi_*`、`wuling_*`）和搭建元件图（`build_*`），
+  以及 `web/index.html` 内嵌的同批图片，来自游戏《明日方舟：终末地》，
+  版权归原权利方（鹰角网络 / Hypergryph）所有，**不在 MIT 授权范围内**。
   本仓库把它们放在这里只为让工具能直接跑起来，仅供学习与交流，不作商业用途。
   如权利方要求，会立即移除相关内容。
