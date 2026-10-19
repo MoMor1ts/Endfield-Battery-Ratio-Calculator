@@ -22,10 +22,8 @@ SOFTWARE.
 
 ---------------------------------------------------------------------------
 
-注意：本授权覆盖源代码（endfield_battery.py、web/template.html、web/build.py
-等）以及图标 logo（resource/logo.png、resource/logo.ico，非游戏素材）。
+注意：本授权覆盖源代码以及图标 logo。
 
-不覆盖游戏素材：resource/ 下的电池图标（gudi_*、wuling_*）与搭建元件图
-（build_*），以及 web/index.html 内嵌的同批图片。它们来自游戏《明日方舟：终末地》，
+不覆盖游戏素材：下的电池图标与搭建元件图，以及网页端内嵌的同批图片。它们来自游戏《明日方舟：终末地》，
 版权归原权利方（鹰角网络 / Hypergryph）所有，不适用上述 MIT 条款，
 也不随本仓库授权再分发。
